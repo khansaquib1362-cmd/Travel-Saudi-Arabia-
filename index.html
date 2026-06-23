@@ -1,0 +1,584 @@
+import React, { useState } from 'react';
+import { 
+  BookOpen, Upload, Search, Compass, ShieldAlert, MapPin, 
+  MessageSquare, FileText, CheckCircle, ChevronRight, HelpCircle, 
+  Building, Plane, Landmark, Calendar, AlertCircle, Sparkles, Filter
+} from 'lucide-react';
+
+// ==================== MOCK DATA SOURCES ====================
+
+const INITIAL_PAPERS = [
+  {
+    id: 'paper-1',
+    title: "Socio-Cultural Evolution of AlUla Heritage Sites",
+    author: "Dr. A. Al-Saud et al. (2025)",
+    tags: ["History", "Archaeology"],
+    summary: "Comprehensive breakdown of Nabataean architectural impact in Hegra and preservation workflows matching Vision 2030 objectives.",
+    content: "Full Text: The archaeological excavations at Hegra demonstrate advanced water harvesting techniques and monolithic rock carvings dating back to the 1st Century BCE. Preserving these zones requires dynamic crowd control and high-end ecological buffers..."
+  },
+  {
+    id: 'paper-2',
+    title: "Sustainable Desert Tourism & Mass Transit Networks",
+    author: "Saudi Tourism Institute (2026)",
+    tags: ["Logistics", "Sustainability"],
+    summary: "Analysis of the Haramain High-Speed Rail extensions and regional EV rental distribution networks for global tourists.",
+    content: "Full Text: Connecting Mecca, Medina, Jeddah, and KAEC via high-speed transit has decreased eco-footprints by 34%. Next-phase planning integrates multi-modal autonomous vehicle hire directly accessible via international single-entry eVisa nodes..."
+  }
+];
+
+const HISTORIC_PALACES = [
+  {
+    id: 'loc-1',
+    name: "At-Turaif District (Diriyah)",
+    type: "Royal Palace Complex",
+    region: "Riyadh Province",
+    image: "https://images.unsplash.com/photo-1677163073232-a58682a20b22?auto=format&fit=crop&w=800&q=80", 
+    coordinates: "24.7333° N, 46.5750° E",
+    history: "The birthplace of the first Saudi State. Built in Najdi architectural style, featuring stunning mud-brick palaces and high defensive walls overlooking Wadi Hanifa.",
+    guidelines: "Modest attire required. Flash photography restricted inside internal chambers. Last entry 9:30 PM."
+  },
+  {
+    id: 'loc-2',
+    name: "Al-Masmak Fortress",
+    type: "Garrison & Citadel",
+    region: "Old Riyadh",
+    image: "https://images.unsplash.com/photo-1586724237569-f3855990358e?auto=format&fit=crop&w=800&q=80",
+    coordinates: "24.6311° N, 46.7133° E",
+    history: "A clay and mud-brick citadel that played a pivotal role in the recapture of Riyadh in 1902 by Ibn Saud. Houses a vast collection of historical firearms and imagery.",
+    guidelines: "No backpacks allowed inside the museum gallery. Free entry for all international tourist passport holders."
+  },
+  {
+    id: 'loc-3',
+    name: "Qasr Al-Farid (Hegra)",
+    type: "Monolithic Tomb Castle",
+    region: "AlUla",
+    image: "https://images.unsplash.com/photo-1628135894186-b4bcba73bc92?auto=format&fit=crop&w=800&q=80",
+    coordinates: "26.8042° N, 37.9564° E",
+    history: "An isolated four-story carved tomb left unfinished by the Nabataeans. The crown jewel of Saudi Arabia's first UNESCO World Heritage site.",
+    guidelines: "Guided booking mandatory via licensed agency. Walking trails restricted to marked wooden causeways to avoid sandstone erosion."
+  }
+];
+
+const TRAVEL_AGENCIES = [
+  { id: 'ag-1', name: "Saudia Holidays", rating: "4.9", contact: "+966 11 400 0000", packages: ["Historical Hubs", "Luxury Eco-Tours"] },
+  { id: 'ag-2', name: "Discover Saudi Ltd.", rating: "4.8", contact: "+966 12 600 1122", packages: ["AlUla Expeditions", "Red Sea Diving"] },
+  { id: 'ag-3', name: "Najd Heritage Caravans", rating: "4.7", contact: "+966 13 800 4433", packages: ["Custom Research Trips", "Desert Camping"] }
+];
+
+const GOVT_GUIDELINES = [
+  { category: "Visa & Entry", rule: "Instant eVisa available for 60+ countries. Must hold passport valid for minimum 6 months.", level: "Mandatory" },
+  { category: "Cultural Decorum", rule: "Public Decorum Law (Public Taste Regulations) applies. Dress modestly in public spaces; shoulders and knees covered.", level: "Mandatory" },
+  { category: "Photography", rule: "No photographing government buildings, military sites, or local citizens without explicit verbal/written consent.", level: "Strict Law" },
+  { category: "Transportation", rule: "International driving permits are accepted for up to 3 months. Left-hand drive rule applies.", level: "Logistics" }
+];
+
+export default function TravelSaudiNotebook() {
+  // Application State
+  const [papers, setPapers] = useState(INITIAL_PAPERS);
+  const [selectedPaper, setSelectedPaper] = useState(INITIAL_PAPERS[0]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState("tourist"); // "tourist" or "agency"
+  
+  // Center Visual View State
+  const [selectedLocation, setSelectedLocation] = useState(HISTORIC_PALACES[0]);
+  
+  // Interaction/Chat States
+  const [chatInput, setChatInput] = useState("");
+  const [chatHistory, setChatHistory] = useState([
+    { sender: 'ai', text: "Welcome to Travel Saudi Notebook System. Send me any query regarding historical validation, travel regulations, or accommodation mapping." }
+  ]);
+
+  // Booking Aggregator States
+  const [bookingForm, setBookingForm] = useState({
+    destination: "AlUla",
+    hotel: "Habitas AlUla Resort",
+    vehicle: "SUV 4x4 Luxury",
+    date: "2026-10-15",
+    agencyId: "ag-1"
+  });
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+
+  // New Document File Upload Handler (Mock)
+  const [uploadName, setUploadName] = useState("");
+  const handleMockUpload = (e) => {
+    e.preventDefault();
+    if (!uploadName.trim()) return;
+    
+    const newPaper = {
+      id: `paper-${Date.now()}`,
+      title: uploadName,
+      author: "User Contributed Researcher (2026)",
+      tags: ["User Upload", "Custom Analysis"],
+      summary: "User-ingested reference manual parsing regional constraints, local transport regulations, and site accessibility algorithms.",
+      content: `Extracted content from user file "${uploadName}": This document outlines unique operational variables across local municipalities, specific hotel booking rates during peak winter seasons, and localized historical asset mappings.`
+    };
+
+    setPapers([newPaper, ...papers]);
+    setSelectedPaper(newPaper);
+    setUploadName("");
+  };
+
+  // AI Inquiry Chat Handler
+  const handleSendMessage = (e) => {
+    e.preventDefault();
+    if (!chatInput.trim()) return;
+
+    const userMsg = { sender: 'user', text: chatInput };
+    
+    // Simple mock RAG system logic matching answers against papers/guidelines
+    let aiResponseText = "I have scanned the uploaded research documents. While I don't have a direct quote for that, our integrated travel agency network can fulfill this request.";
+    
+    const lowerInput = chatInput.toLowerCase();
+    if (lowerInput.includes("alula") || lowerInput.includes("hegra")) {
+      aiResponseText = `[Source: Paper 1 - Al-Saud (2025)] Hegra features Nabataean monolithic tombs. For safety, travel agencies recommend booking designated transport lines. Recommended guidelines: Use wooden causeways.`;
+    } else if (lowerInput.includes("visa") || lowerInput.includes("dress") || lowerInput.includes("guideline")) {
+      aiResponseText = `[Source: Saudi Gov Portal 2026] Public Decorum regulations require modest dress codes across all historical points of interest. Passports must be valid for 6 months.`;
+    } else if (lowerInput.includes("rail") || lowerInput.includes("train") || lowerInput.includes("riyadh")) {
+      aiResponseText = `[Source: Paper 2] The Haramain High-Speed Rail coordinates fast travel routes. High-capacity transit decreases regional emissions significantly.`;
+    }
+
+    const aiMsg = { sender: 'ai', text: aiResponseText };
+    setChatHistory([...chatHistory, userMsg, aiMsg]);
+    setChatInput("");
+  };
+
+  const handleExecuteBooking = (e) => {
+    e.preventDefault();
+    setBookingSuccess(true);
+    setTimeout(() => setBookingSuccess(false), 5000);
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-900">
+      
+      {/* ==================== GLOBAL TOP HEADER ==================== */}
+      <header className="bg-slate-900 border-b border-slate-800 px-6 py-4 flex items-center justify-between sticky top-0 z-50">
+        <div className="flex items-center space-x-3">
+          <div className="bg-gradient-to-tr from-emerald-600 to-amber-500 p-2 rounded-xl shadow-lg">
+            <Compass className="w-6 h-6 text-slate-900 stroke-[2.5]" />
+          </div>
+          <div>
+            <h1 className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+              TRAVEL SAUDI <span className="text-xs bg-emerald-950 text-emerald-400 border border-emerald-800 font-semibold px-2 py-0.5 rounded-full">ArxivLLM Engine</span>
+            </h1>
+            <p className="text-xs text-slate-400">Research Documents & Tourism Synchronization Matrix</p>
+          </div>
+        </div>
+
+        {/* View Mode Switcher */}
+        <div className="flex bg-slate-950 p-1 rounded-lg border border-slate-800">
+          <button 
+            onClick={() => setActiveTab('tourist')}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === 'tourist' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Tourist Hub Mode
+          </button>
+          <button 
+            onClick={() => setActiveTab('agency')}
+            className={`px-4 py-1.5 rounded-md text-xs font-medium transition-all ${activeTab === 'agency' ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-slate-950 font-bold shadow' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Travel Agency / Admin Mode
+          </button>
+        </div>
+      </header>
+
+      {/* ==================== MAIN WORKSPACE LAYOUT ==================== */}
+      <div className="flex-1 grid grid-cols-1 xl:grid-cols-12 overflow-hidden">
+        
+        {/* ------------------ LEFT SIDEBAR: PAPERS & LIVE INQUIRY ------------------ */}
+        <aside className="xl:col-span-3 bg-slate-900/60 border-r border-slate-800/80 p-4 flex flex-col space-y-5 overflow-y-auto">
+          
+          {/* Section: Upload Document */}
+          <div className="bg-slate-900 border border-slate-800/80 rounded-xl p-4 shadow-sm">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-1.5">
+              <Upload className="w-3.5 h-3.5" /> Ingest Research Papers
+            </h3>
+            <form onSubmit={handleMockUpload} className="space-y-2">
+              <label className="block text-[11px] text-slate-400">Upload PDF / Markdown Studies</label>
+              <input 
+                type="text" 
+                placeholder="Paper title or file name..." 
+                value={uploadName}
+                onChange={(e) => setUploadName(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-amber-500 text-slate-200"
+              />
+              <button 
+                type="submit" 
+                className="w-full bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 font-medium py-1.5 rounded-lg text-xs transition flex items-center justify-center gap-2"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> Index Into Vector Memory
+              </button>
+            </form>
+          </div>
+
+          {/* Section: Live Search Paper Repository */}
+          <div className="flex-1 flex flex-col min-h-[220px]">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2 flex items-center gap-1.5">
+              <BookOpen className="w-3.5 h-3.5" /> Paper Source Context
+            </h3>
+            <div className="relative mb-3">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-2.5 text-slate-500" />
+              <input 
+                type="text" 
+                placeholder="Search indexed corpus..." 
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-lg pl-8 pr-3 py-2 text-xs focus:outline-none focus:border-emerald-500"
+              />
+            </div>
+
+            {/* Document Cards List */}
+            <div className="space-y-2 overflow-y-auto flex-1 max-h-[260px] pr-1">
+              {papers
+                .filter(p => p.title.toLowerCase().includes(searchQuery.toLowerCase()) || p.tags.some(t => t.toLowerCase().includes(searchQuery.toLowerCase())))
+                .map((paper) => (
+                  <div 
+                    key={paper.id}
+                    onClick={() => setSelectedPaper(paper)}
+                    className={`p-3 rounded-lg border transition cursor-pointer text-left ${selectedPaper.id === paper.id ? 'bg-gradient-to-br from-slate-800 to-slate-900 border-amber-500/50 shadow-md' : 'bg-slate-950/60 border-slate-800/60 hover:bg-slate-900'}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <h4 className="text-xs font-bold text-slate-100 line-clamp-1">{paper.title}</h4>
+                      <FileText className={`w-3.5 h-3.5 shrink-0 ${selectedPaper.id === paper.id ? 'text-amber-400' : 'text-slate-600'}`} />
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-0.5">{paper.author}</p>
+                    <div className="flex gap-1.5 mt-2">
+                      {paper.tags.map((tag, idx) => (
+                        <span key={idx} className="bg-slate-900 border border-slate-800 text-slate-400 text-[9px] px-1.5 py-0.5 rounded">
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section: Persistent Inquiry Chat Terminal */}
+          <div className="bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col h-[280px]">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2">
+              <span className="text-xs font-bold tracking-wide flex items-center gap-1.5 text-slate-300">
+                <MessageSquare className="w-3.5 h-3.5 text-amber-500" /> Live AI Inquiry Chat
+              </span>
+              <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            </div>
+            
+            {/* Chat Box */}
+            <div className="flex-1 overflow-y-auto space-y-2 text-[11px] pr-1 mb-2 scrollbar-thin">
+              {chatHistory.map((msg, idx) => (
+                <div key={idx} className={`p-2 rounded-lg max-w-[90%] ${msg.sender === 'user' ? 'bg-slate-800 text-slate-200 ml-auto border border-slate-700' : 'bg-slate-900 text-slate-300 mr-auto border border-slate-800'}`}>
+                  <strong>{msg.sender === 'user' ? 'You: ' : 'Gemini Core: '}</strong>
+                  {msg.text}
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleSendMessage} className="flex gap-1">
+              <input 
+                type="text" 
+                placeholder="Ask paper definitions or route inquiries..." 
+                value={chatInput}
+                onChange={(e) => setChatInput(e.target.value)}
+                className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-amber-500"
+              />
+              <button type="submit" className="bg-amber-500 text-slate-950 text-xs font-bold px-2 rounded-lg hover:bg-amber-400">
+                Send
+              </button>
+            </form>
+          </div>
+
+        </aside>
+
+        {/* ------------------ CENTRAL WORKSPACE: VISUAL HISTORY & AGENT MATRIX ------------------ */}
+        <main className="xl:col-span-6 bg-slate-950 p-5 flex flex-col space-y-6 overflow-y-auto">
+          
+          {/* Active Reference Context Bar */}
+          <div className="bg-gradient-to-r from-emerald-950/40 via-slate-900 to-slate-900 border border-emerald-900/30 rounded-xl p-3 flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="p-2 bg-emerald-900/30 rounded-lg border border-emerald-800/40">
+                <Building className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div>
+                <p className="text-[10px] uppercase text-emerald-400 tracking-wider font-bold">Active Notebook Reference Knowledge</p>
+                <h2 className="text-sm font-semibold text-white truncate max-w-md">{selectedPaper.title}</h2>
+              </div>
+            </div>
+            <div className="text-right text-[11px] text-slate-400 hidden sm:block">
+              {selectedPaper.author}
+            </div>
+          </div>
+
+          {/* Center Component 1: Visual 3D Simulated Interactive Showcase */}
+          <section className="bg-slate-900 border border-slate-800/80 rounded-2xl overflow-hidden shadow-2xl">
+            <div className="p-4 bg-gradient-to-r from-slate-900 to-slate-800 border-b border-slate-800/80 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Landmark className="w-4 h-4 text-amber-400" />
+                <h3 className="text-sm font-bold tracking-tight text-slate-100">Historical Architecture Simulation (3D Canvas Viewport)</h3>
+              </div>
+              <span className="text-[10px] bg-slate-950 text-slate-400 px-2 py-0.5 rounded border border-slate-800">Visual Engine v3.0</span>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-12 p-4 gap-4">
+              {/* Left Column: Interactive Simulated Spatial Card */}
+              <div className="md:col-span-5 relative group bg-slate-950 rounded-xl overflow-hidden border border-slate-800 aspect-video md:aspect-square flex flex-col justify-end shadow-inner">
+                <img 
+                  src={selectedLocation.image} 
+                  alt={selectedLocation.name}
+                  className="absolute inset-0 w-full h-full object-cover opacity-65 group-hover:scale-105 transition-transform duration-700" 
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/30 to-transparent"></div>
+                
+                {/* 3D Indicator Badge */}
+                <div className="absolute top-3 left-3 bg-slate-950/90 backdrop-blur-md border border-amber-500/40 px-2 py-1 rounded text-[9px] font-mono tracking-widest text-amber-400 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-ping"></span> MOCK 3D FIELD
+                </div>
+
+                <div className="relative p-3 z-10">
+                  <span className="text-[10px] font-bold text-emerald-400">{selectedLocation.type}</span>
+                  <h4 className="text-base font-bold text-white tracking-wide">{selectedLocation.name}</h4>
+                  <p className="text-[10px] text-slate-400 flex items-center gap-1 mt-0.5">
+                    <MapPin className="w-3 h-3 text-slate-500" /> {selectedLocation.region}
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Column: Spatial/Historical Context extracted via RAG */}
+              <div className="md:col-span-7 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-slate-300">Historical Research Profile</span>
+                    <span className="text-[10px] font-mono text-slate-500">{selectedLocation.coordinates}</span>
+                  </div>
+                  <p className="text-xs text-slate-300 leading-relaxed bg-slate-950 p-3 rounded-lg border border-slate-800/60">
+                    {selectedLocation.history}
+                  </p>
+                </div>
+
+                <div className="bg-amber-950/20 border border-amber-900/30 p-3 rounded-lg">
+                  <div className="flex items-center gap-1.5 text-amber-400 text-xs font-bold mb-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> Context-Specific Local Protocol
+                  </div>
+                  <p className="text-[11px] text-amber-200/90">{selectedLocation.guidelines}</p>
+                </div>
+
+                {/* Location Quick Switcher */}
+                <div className="pt-2 border-t border-slate-800/80">
+                  <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-1.5">Switch Interactive Assets</p>
+                  <div className="flex flex-wrap gap-1.5">
+                    {HISTORIC_PALACES.map((loc) => (
+                      <button
+                        key={loc.id}
+                        onClick={() => setSelectedLocation(loc)}
+                        className={`text-[11px] px-2.5 py-1 rounded border transition ${selectedLocation.id === loc.id ? 'bg-amber-500 text-slate-950 border-amber-400 font-semibold' : 'bg-slate-950 text-slate-300 border-slate-800 hover:border-slate-700'}`}
+                      >
+                        {loc.name.split(' ')[0]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Center Component 2: Unified Travel Booking Aggregator Portal */}
+          <section className="bg-slate-900 border border-slate-800/80 rounded-2xl p-4 shadow-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-slate-800/80 pb-3 mb-4 gap-2">
+              <div className="flex items-center gap-2">
+                <Plane className="w-4 h-4 text-emerald-400" />
+                <div>
+                  <h3 className="text-sm font-bold text-slate-100">Integrated Travel Booking Matrix</h3>
+                  <p className="text-[11px] text-slate-400">Accommodations, Vehicles, Food Logistics & Agencies</p>
+                </div>
+              </div>
+              <div className="flex gap-1 text-[10px]">
+                <span className="bg-slate-950 border border-slate-800 px-2 py-1 rounded text-slate-300 flex items-center gap-1">
+                  <CheckCircle className="w-3 h-3 text-emerald-500" /> API Connected
+                </span>
+              </div>
+            </div>
+
+            {bookingSuccess && (
+              <div className="bg-emerald-900/30 border border-emerald-500/50 text-emerald-300 text-xs p-3 rounded-xl mb-4 flex items-center gap-2">
+                <CheckCircle className="w-4 h-4" /> 
+                <span><strong>Booking Matrix Success:</strong> Reservation transmitted securely to verified agency. Confirmation voucher issued via system log.</span>
+              </div>
+            )}
+
+            <form onSubmit={handleExecuteBooking} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Target Heritage Region</label>
+                <select 
+                  value={bookingForm.destination}
+                  onChange={(e) => setBookingForm({...bookingForm, destination: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-200"
+                >
+                  <option value="AlUla">AlUla (Hegra Regional Node)</option>
+                  <option value="Riyadh">Riyadh (Diriyah Historical Zone)</option>
+                  <option value="Jeddah">Historic Al-Balad Complex</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Hotel Accommodations</label>
+                <select 
+                  value={bookingForm.hotel}
+                  onChange={(e) => setBookingForm({...bookingForm, hotel: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-200"
+                >
+                  <option value="Habitas AlUla Resort">Habitas Resort Eco-Lodge</option>
+                  <option value="The Ritz-Carlton Riyadh">The Ritz-Carlton Riyadh</option>
+                  <option value="Al-Balad Heritage Hotel">Al-Balad Heritage Stay</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Vehicle Fleet Type</label>
+                <select 
+                  value={bookingForm.vehicle}
+                  onChange={(e) => setBookingForm({...bookingForm, vehicle: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-200"
+                >
+                  <option value="SUV 4x4 Luxury">GMC Yukon 4x4 Luxury</option>
+                  <option value="Electric Sedan Tesla">Lucid Air Pure EV (Local Hire)</option>
+                  <option value="Haramain Rail Pass">Haramain Rail First-Class Pass</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Travel Execution Date</label>
+                <div className="relative">
+                  <input 
+                    type="date" 
+                    value={bookingForm.date}
+                    onChange={(e) => setBookingForm({...bookingForm, date: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-200"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[11px] text-slate-400 mb-1">Assigned Ground Agency</label>
+                <select 
+                  value={bookingForm.agencyId}
+                  onChange={(e) => setBookingForm({...bookingForm, agencyId: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none text-slate-200"
+                >
+                  {TRAVEL_AGENCIES.map(ag => (
+                    <option key={ag.id} value={ag.id}>{ag.name} (★{ag.rating})</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex items-end">
+                <button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-emerald-600 to-emerald-500 text-slate-950 font-bold py-2 px-4 rounded-lg text-xs hover:from-emerald-500 hover:to-emerald-400 shadow transition"
+                >
+                  Confirm Integrated Itinerary
+                </button>
+              </div>
+            </form>
+          </section>
+
+          {/* Document Content Extracted Core Memory Fragment View */}
+          <section className="bg-slate-900/40 border border-slate-800 rounded-xl p-4">
+            <h4 className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Notebook Target Text Segment</h4>
+            <p className="text-xs text-slate-400 italic bg-slate-950 p-3 rounded border border-slate-900/80 leading-relaxed">
+              "{selectedPaper.content}"
+            </p>
+          </section>
+
+        </main>
+
+        {/* ------------------ RIGHT SIDEBAR: AGENCY DIRECTORY & SIMPLIFIED GUIDELINES ------------------ */}
+        <aside className="xl:col-span-3 bg-slate-900/60 border-l border-slate-800/80 p-4 flex flex-col space-y-5 overflow-y-auto">
+          
+          {/* Section: Linked Touristic & Travel Agencies */}
+          <div>
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-amber-400 mb-3 flex items-center gap-1.5">
+              <Building className="w-3.5 h-3.5" /> Affiliated Travel Agencies
+            </h3>
+            
+            <div className="space-y-2">
+              {TRAVEL_AGENCIES.map((agency) => (
+                <div key={agency.id} className="bg-slate-950 border border-slate-800/80 rounded-xl p-3 hover:border-slate-700 transition">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="text-xs font-bold text-white">{agency.name}</h4>
+                      <p className="text-[10px] text-slate-400">Phone: {agency.contact}</p>
+                    </div>
+                    <span className="text-[10px] bg-amber-950 text-amber-400 border border-amber-900/60 px-1.5 py-0.5 rounded font-bold">
+                      ★ {agency.rating}
+                    </span>
+                  </div>
+                  <div className="mt-2 flex flex-wrap gap-1">
+                    {agency.packages.map((pkg, i) => (
+                      <span key={i} className="text-[9px] bg-slate-900 text-emerald-400 px-1.5 py-0.5 rounded border border-slate-800">
+                        {pkg}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Section: Simplified Government Guidelines Validation Engine */}
+          <div className="flex-1 flex flex-col">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                <ShieldAlert className="w-3.5 h-3.5" /> Saudi Gov Guidelines
+              </h3>
+              <span className="text-[9px] text-slate-500 font-mono">2026 Mandate</span>
+            </div>
+
+            <div className="bg-slate-950 border border-slate-800/80 rounded-xl divide-y divide-slate-800 overflow-hidden">
+              {GOVT_GUIDELINES.map((guide, idx) => (
+                <div key={idx} className="p-3 text-left hover:bg-slate-900/40 transition">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold text-slate-300 uppercase tracking-wide">{guide.category}</span>
+                    <span className={`text-[9px] font-mono px-1.5 py-0.2 rounded border ${
+                      guide.level.includes('Mandatory') || guide.level.includes('Strict') 
+                        ? 'bg-rose-950/40 text-rose-400 border-rose-900/50' 
+                        : 'bg-blue-950/40 text-blue-400 border-blue-900/50'
+                    }`}>
+                      {guide.level}
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 leading-relaxed">
+                    {guide.rule}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            {/* Quick Helper Banner */}
+            <div className="mt-4 bg-gradient-to-br from-slate-900 to-slate-950 border border-slate-800 rounded-xl p-3 text-center">
+              <HelpCircle className="w-4 h-4 mx-auto text-slate-500 mb-1" />
+              <h5 className="text-[11px] font-bold text-slate-300">Compliance Crosscheck</h5>
+              <p className="text-[10px] text-slate-500 mt-0.5">
+                The Notebook automatic regulatory engine maps incoming itineraries against Ministry of Tourism legal updates.
+              </p>
+            </div>
+          </div>
+
+        </aside>
+
+      </div>
+
+      {/* ==================== SYSTEM STATUS FOOTER ==================== */}
+      <footer className="bg-slate-900 border-t border-slate-800 px-4 py-2 flex items-center justify-between text-[11px] text-slate-500">
+        <div className="flex items-center space-x-4">
+          <span>Active Context Storage: <strong className="text-slate-300">{papers.length} Papers</strong></span>
+          <span className="hidden sm:inline text-slate-700">|</span>
+          <span className="hidden sm:inline">Active Anchor Site: <strong className="text-slate-300">{selectedLocation.name}</strong></span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-1.5 h-1.5 bg-emerald-400 rounded-full"></div>
+          <span>Systems Nominal (RAG Layer Active)</span>
+        </div>
+      </footer>
+
+    </div>
+  );
+}
